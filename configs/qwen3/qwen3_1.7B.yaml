@@ -1,0 +1,32 @@
+# Qwen3 1.7B Model Configuration
+# Model Architecture
+vocab_size: 151936                    # Vocabulary size
+context_length: 40960                 # Maximum sequence length
+embedding_dim: 2048                   # Token embedding dimension
+num_heads: 16                         # Number of attention heads
+num_layers: 28                        # Number of transformer blocks
+hidden_dim: 6144                      # Feed-forward hidden dimension
+head_dim: 128                         # Dimension per attention head
+num_kv_groups: 8                      # Number of key-value groups for GQA
+d_input: 2048                         # Input dimension (same as embedding_dim)
+
+# Attention Configuration
+use_qk_norm: true                     # Use RMSNorm on queries and keys
+q_proj_use_bias: false               # Query projection bias
+k_proj_use_bias: false               # Key projection bias
+v_proj_use_bias: false               # Value projection bias
+o_proj_use_bias: false               # Output projection bias
+
+# Feed Forward Configuration
+fc_use_bias: false                    # Feed-forward layer bias
+
+# Layer Normalization Configuration
+epsilon: 1.0e-6                       # Small value for numerical stability
+qwen3_compatiable: true               # Qwen3 compatibility mode
+rms_norm_use_bias: false              # RMSNorm bias parameter
+
+# Positional Encoding
+rope_base: 1000000.0                  # RoPE base frequency
+
+# Training Configuration
+dtype: bfloat16                       # Model parameter data type

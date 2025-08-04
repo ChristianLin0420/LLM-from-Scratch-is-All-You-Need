@@ -18,13 +18,17 @@ class RMSNorm(nn.Module):
     Output shape:
         norm_hidden_states: Same shape as input (batch_size, seq_len, embedding_dim) or (seq_len, embedding_dim)
     """
-    def __init__(self, config):
+    def __init__(self, config, is_layer_norm = False):
         super().__init__()
         self.epsilon = config["epsilon"]
         self.qwen3_compatiable = config["qwen3_compatiable"]
 
-        self.scale = nn.Parameter(torch.ones(config["embedding_dim"]))
-        self.shift = nn.Parameter(torch.zeros(config["embedding_dim"])) if config["rms_norm_use_bias"] else None
+        if is_layer_norm:
+            self.scale = nn.Parameter(torch.ones(config["embedding_dim"]))
+            self.shift = nn.Parameter(torch.zeros(config["embedding_dim"])) if config["rms_norm_use_bias"] else None
+        else:
+            self.scale = nn.Parameter(torch.ones(config["head_dim"]))
+            self.shift = nn.Parameter(torch.zeros(config["head_dim"])) if config["rms_norm_use_bias"] else None
 
     def forward(self, hidden_states):
         """

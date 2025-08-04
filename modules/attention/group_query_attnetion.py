@@ -49,8 +49,8 @@ class GroupQueryAttention(nn.Module):
         self.d_output = self.num_heads * self.head_dim
 
         self.q_proj = nn.Linear(config["d_input"], self.d_output, dtype = config["dtype"], bias = config["q_proj_use_bias"])
-        self.k_proj = nn.Linear(config["d_input"], self.d_output, dtype = config["dtype"], bias = config["k_proj_use_bias"])
-        self.v_proj = nn.Linear(config["d_input"], self.d_output, dtype = config["dtype"], bias = config["v_proj_use_bias"])
+        self.k_proj = nn.Linear(config["d_input"], self.num_kv_groups * self.head_dim, dtype = config["dtype"], bias = config["k_proj_use_bias"])
+        self.v_proj = nn.Linear(config["d_input"], self.num_kv_groups * self.head_dim, dtype = config["dtype"], bias = config["v_proj_use_bias"])
 
         self.output_proj = nn.Linear(self.d_output, config["d_input"], dtype = config["dtype"], bias = config["o_proj_use_bias"])
 

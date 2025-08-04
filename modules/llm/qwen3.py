@@ -31,7 +31,7 @@ class Qwen3(nn.Module):
 
         self.blocks = nn.ModuleList([Qwen3Block(config) for _ in range(config["num_layers"])])
 
-        self.norm = RMSNorm(config)
+        self.norm = RMSNorm(config, is_layer_norm = True)
 
         self.lm_head = nn.Linear(config["embedding_dim"], config["vocab_size"], dtype = config["dtype"])
 
@@ -43,8 +43,10 @@ class Qwen3(nn.Module):
 
         self.cos, self.sin = compute_rope_parameters(self.head_dim, dtype = config["dtype"])
 
-        self.register_buffer("cos", self.cos, persistent = False)
-        self.register_buffer("sin", self.sin, persistent = False)
+        if not hasattr(self, "cos"):
+            self.register_buffer("cos", self.cos, persistent = False)
+        if not hasattr(self, "sin"):
+            self.register_buffer("sin", self.sin, persistent = False)
 
     def forward(self, input_ids):
         """

@@ -27,8 +27,8 @@ class Qwen3Block(nn.Module):
 
         self.attention = GroupQueryAttention(config)
         self.ffn = FeedForwardNet(config)
-        self.norm1 = RMSNorm(config)
-        self.norm2 = RMSNorm(config)
+        self.norm1 = RMSNorm(config, is_layer_norm = True)
+        self.norm2 = RMSNorm(config, is_layer_norm = True)
 
     def forward(self, input_tensor, attention_mask, cos, sin):
         """
