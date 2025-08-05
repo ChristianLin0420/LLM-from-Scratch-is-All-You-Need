@@ -11,7 +11,7 @@ from typing import Dict, Any, Optional, Union
 from safetensors.torch import load_file
 from huggingface_hub import hf_hub_download, snapshot_download
 
-from .llm import Qwen3
+from .llm import Qwen3, Qwen1
 from .tokenizer import get_tokenizer
 
 
@@ -26,6 +26,15 @@ class ModelRegistry:
                 "base": "Qwen/Qwen3-{size}-Base",
                 "instruct": "Qwen/Qwen3-{size}",
                 "reasoning": "Qwen/Qwen3-{size}"
+            }
+        },
+        "qwen1": {
+            "class": Qwen1,
+            "weight_mapping": "qwen1_mapping",
+            "repo_patterns": {
+                "base": "Qwen/Qwen-{size}-Chat",
+                "instruct": "Qwen/Qwen-{size}-Chat",
+                "chat": "Qwen/Qwen-{size}-Chat"
             }
         }
     }
@@ -287,9 +296,112 @@ def load_weights_into_qwen3(model, config, params):
         )
 
 
+def load_weights_into_qwen1(model, config, params):
+    """
+    Load pretrained weights into Qwen1 model with proper mapping.
+    Similar to Qwen3 but without QK normalization.
+    
+    Args:
+        model: Qwen1 model instance
+        config: Model configuration
+        params: Dictionary of pretrained parameters
+    """
+    def assign(left, right, tensor_name="unknown"):
+        """Safely assign weights with shape validation."""
+        if left.shape != right.shape:
+            raise ValueError(f"Shape mismatch in tensor '{tensor_name}'. Left: {left.shape}, Right: {right.shape}")
+        return torch.nn.Parameter(right.clone().detach() if isinstance(right, torch.Tensor) else torch.tensor(right))
+    
+    # Token embedding
+    model.token_embedding.weight = assign(
+        model.token_embedding.weight, 
+        params["model.embed_tokens.weight"], 
+        "model.embed_tokens.weight"
+    )
+    
+    # Process each transformer block
+    for l in range(config["num_layers"]):
+        block = model.blocks[l]
+        att = block.attention
+        
+        # Attention projections
+        att.q_proj.weight = assign(
+            att.q_proj.weight,
+            params[f"model.layers.{l}.self_attn.q_proj.weight"],
+            f"model.layers.{l}.self_attn.q_proj.weight"
+        )
+        att.k_proj.weight = assign(
+            att.k_proj.weight,
+            params[f"model.layers.{l}.self_attn.k_proj.weight"],
+            f"model.layers.{l}.self_attn.k_proj.weight"
+        )
+        att.v_proj.weight = assign(
+            att.v_proj.weight,
+            params[f"model.layers.{l}.self_attn.v_proj.weight"],
+            f"model.layers.{l}.self_attn.v_proj.weight"
+        )
+        att.output_proj.weight = assign(
+            att.output_proj.weight,
+            params[f"model.layers.{l}.self_attn.o_proj.weight"],
+            f"model.layers.{l}.self_attn.o_proj.weight"
+        )
+        
+        # Layer norms
+        block.norm1.scale = assign(
+            block.norm1.scale,
+            params[f"model.layers.{l}.input_layernorm.weight"],
+            f"model.layers.{l}.input_layernorm.weight"
+        )
+        block.norm2.scale = assign(
+            block.norm2.scale,
+            params[f"model.layers.{l}.post_attention_layernorm.weight"],
+            f"model.layers.{l}.post_attention_layernorm.weight"
+        )
+        
+        # Feed-forward weights
+        block.ffn.fc1.weight = assign(
+            block.ffn.fc1.weight,
+            params[f"model.layers.{l}.mlp.gate_proj.weight"],
+            f"model.layers.{l}.mlp.gate_proj.weight"
+        )
+        block.ffn.fc2.weight = assign(
+            block.ffn.fc2.weight,
+            params[f"model.layers.{l}.mlp.up_proj.weight"],
+            f"model.layers.{l}.mlp.up_proj.weight"
+        )
+        block.ffn.fc3.weight = assign(
+            block.ffn.fc3.weight,
+            params[f"model.layers.{l}.mlp.down_proj.weight"],
+            f"model.layers.{l}.mlp.down_proj.weight"
+        )
+    
+    # Final layer norm and output head
+    model.norm.scale = assign(
+        model.norm.scale, 
+        params["model.norm.weight"], 
+        "model.norm.weight"
+    )
+    
+    if "lm_head.weight" in params:
+        model.lm_head.weight = assign(
+            model.lm_head.weight, 
+            params["lm_head.weight"], 
+            "lm_head.weight"
+        )
+    else:
+        # Weight tying - reuse embedding weights
+        print("Model uses weight tying.")
+        model.lm_head.weight = assign(
+            model.lm_head.weight, 
+            params["model.embed_tokens.weight"], 
+            "model.embed_tokens.weight"
+        )
+
+
 # Weight mapping registry
 WEIGHT_MAPPINGS = {
-    "qwen3_mapping": load_weights_into_qwen3
+    "qwen3_mapping": load_weights_into_qwen3,
+    "qwen1_mapping": load_weights_into_qwen1
 }
 
 
@@ -306,7 +418,7 @@ def load_pretrained_model(
     Complete pipeline to load a pretrained model with tokenizer.
     
     Args:
-        model_type: Type of model ("qwen3")
+        model_type: Type of model ("qwen3", "qwen1")
         size: Model size ("1.7B", "4B", "8B", etc.)
         variant: Model variant ("base", "instruct", "reasoning")
         config_path: Path to local config file (optional)
@@ -353,4 +465,9 @@ def load_pretrained_model(
 # Convenience functions for common use cases
 def load_qwen3(size: str = "1.7B", variant: str = "base", **kwargs):
     """Convenience function to load Qwen3 model."""
-    return load_pretrained_model("qwen3", size, variant, **kwargs)
+    return load_pretrained_model(model_type="qwen3", size=size, variant=variant, **kwargs)
+
+
+def load_qwen1(size: str = "7B", variant: str = "chat", **kwargs):
+    """Convenience function to load Qwen1 model."""
+    return load_pretrained_model(model_type="qwen1", size=size, variant=variant, **kwargs)

@@ -1,0 +1,31 @@
+# Qwen1 14B Model Configuration
+# Model Architecture
+vocab_size: 151936                    # Vocabulary size
+context_length: 8192                  # Maximum sequence length
+embedding_dim: 5120                   # Token embedding dimension
+num_heads: 40                         # Number of attention heads
+num_layers: 40                        # Number of transformer blocks
+hidden_dim: 13696                     # Feed-forward hidden dimension
+head_dim: 128                         # Dimension per attention head
+d_input: 5120                         # Input dimension (same as embedding_dim)
+
+# Attention Configuration (Simpler than Qwen3)
+use_qk_norm: false                    # No RMSNorm on queries and keys for Qwen1
+q_proj_use_bias: false               # Query projection bias
+k_proj_use_bias: false               # Key projection bias
+v_proj_use_bias: false               # Value projection bias
+o_proj_use_bias: false               # Output projection bias
+
+# Feed Forward Configuration
+fc_use_bias: false                    # Feed-forward layer bias
+
+# Layer Normalization Configuration
+epsilon: 1.0e-6                       # Small value for numerical stability
+qwen3_compatiable: false              # Not Qwen3 compatible
+rms_norm_use_bias: false              # RMSNorm bias parameter
+
+# Positional Encoding
+rope_base: 10000.0                    # RoPE base frequency
+
+# Training Configuration
+dtype: bfloat16                       # Model parameter data type

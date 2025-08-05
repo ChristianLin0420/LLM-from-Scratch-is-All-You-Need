@@ -1,14 +1,14 @@
 # Qwen3 0.6B Model Configuration
 # Model Architecture
 vocab_size: 151936                    # Vocabulary size
-context_length: 40960                 # Maximum sequence length
-embedding_dim: 1024                   # Token embedding dimension
-num_heads: 16                         # Number of attention heads
-num_layers: 24                        # Number of transformer blocks
-hidden_dim: 2816                      # Feed-forward hidden dimension
+context_length: 32768                 # Maximum sequence length
+embedding_dim: 1536                   # Token embedding dimension
+num_heads: 12                         # Number of attention heads
+num_layers: 18                        # Number of transformer blocks
+hidden_dim: 5504                      # Feed-forward hidden dimension
 head_dim: 128                         # Dimension per attention head
-num_kv_groups: 8                      # Number of key-value groups for GQA
-d_input: 1024                         # Input dimension (same as embedding_dim)
+num_kv_groups: 4                      # Number of key-value groups for GQA
+d_input: 1536                         # Input dimension (same as embedding_dim)
 
 # Attention Configuration
 use_qk_norm: true                     # Use RMSNorm on queries and keys
